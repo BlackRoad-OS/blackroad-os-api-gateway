@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"log"
 	"time"
@@ -30,9 +31,12 @@ func NewStreamHub() *StreamHub {
 }
 
 // Run processes registration and broadcasts.
-func (h *StreamHub) Run() {
+func (h *StreamHub) Run(ctx context.Context) {
+	defer h.shutdown()
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case client := <-h.register:
 			h.clients[client] = struct{}{}
 		case client := <-h.unregister:
@@ -47,6 +51,13 @@ func (h *StreamHub) Run() {
 				}
 			}
 		}
+	}
+}
+
+// shutdown closes all client channels when the hub stops.
+func (h *StreamHub) shutdown() {
+	for client := range h.clients {
+		close(client)
 	}
 }
 

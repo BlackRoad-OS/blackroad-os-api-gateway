@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -30,7 +31,9 @@ func TestIngestStoresPingAndBroadcasts(t *testing.T) {
 	t.Cleanup(func() { database.Close() })
 
 	hub := NewStreamHub()
-	go hub.Run()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go hub.Run(ctx)
 
 	app := setupTestApp(t, database, hub, "")
 
@@ -67,7 +70,9 @@ func TestHMACMiddleware(t *testing.T) {
 	t.Cleanup(func() { database.Close() })
 
 	hub := NewStreamHub()
-	go hub.Run()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go hub.Run(ctx)
 	app := setupTestApp(t, database, hub, "secret")
 
 	body := []byte(`{"env":"core","status":"ok"}`)
