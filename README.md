@@ -6,7 +6,7 @@ Lightweight status-ping collector built with Go 1.22 and Fiber v3. Beacon captur
 
 ```bash
 go run ./cmd/beacon      # :5000
-curl -X POST :5000/ping -d '{"env":"core","status":"ok"}'
+curl -X POST :5000/ping -H "Content-Type: application/json" -d '{"env":"core","status":"ok"}'
 curl :5000/stream        # see live SSE
 ```
 
