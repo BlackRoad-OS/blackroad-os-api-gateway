@@ -5,8 +5,17 @@ import fp from 'fastify-plugin';
 export type AuthenticatedRequest = FastifyRequest & { jwt: JWT };
 
 async function authPlugin(fastify: FastifyInstance) {
+  let jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET environment variable must be set in production.');
+    } else {
+      jwtSecret = 'development-secret';
+      fastify.log.warn('Using development JWT secret. Do NOT use this in production!');
+    }
+  }
   fastify.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'development-secret',
+    secret: jwtSecret,
   });
 
   fastify.decorate(
