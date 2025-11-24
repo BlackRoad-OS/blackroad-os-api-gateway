@@ -93,6 +93,7 @@ func (h *Handler) Stream(c fiber.Ctx) error {
 			case ping := <-client:
 				b, err := json.Marshal(ping)
 				if err != nil {
+					log.Printf("error: failed to marshal ping (ID: %s): %v", ping.ID, err)
 					continue
 				}
 				w.WriteString("data: ")
