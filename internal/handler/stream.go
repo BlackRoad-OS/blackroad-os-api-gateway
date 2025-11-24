@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"sync"
 	"time"
 
 	"blackroad-os-beacon/internal/model"
@@ -14,10 +15,11 @@ import (
 
 // StreamHub manages SSE clients.
 type StreamHub struct {
-	clients    map[chan model.Ping]struct{}
-	register   chan chan model.Ping
-	unregister chan chan model.Ping
-	broadcast  chan model.Ping
+	clients      map[chan model.Ping]struct{}
+	register     chan chan model.Ping
+	unregister   chan chan model.Ping
+	broadcast    chan model.Ping
+	shutdownOnce sync.Once
 }
 
 // NewStreamHub constructs a hub.
@@ -56,10 +58,12 @@ func (h *StreamHub) Run(ctx context.Context) {
 
 // shutdown closes all client channels when the hub stops.
 func (h *StreamHub) shutdown() {
-	for client := range h.clients {
-		close(client)
-	}
-	h.clients = make(map[chan model.Ping]struct{})
+	h.shutdownOnce.Do(func() {
+		for client := range h.clients {
+			close(client)
+		}
+		h.clients = make(map[chan model.Ping]struct{})
+	})
 }
 
 // Broadcast sends message to all subscribers.

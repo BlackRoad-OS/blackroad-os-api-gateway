@@ -59,7 +59,6 @@ func main() {
 		if err := app.Shutdown(); err != nil {
 			log.Printf("error during shutdown: %v", err)
 		}
-		os.Exit(0)
 	}()
 
 	if err := app.Listen(addr); err != nil {
