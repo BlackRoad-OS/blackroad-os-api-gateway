@@ -40,6 +40,10 @@ func (h *Handler) Ingest(c fiber.Ctx) error {
 	if req.Env == "" || req.Status == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "env and status required")
 	}
+	const maxMetaLength = 4096 // bytes
+	if len(req.Meta) > maxMetaLength {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("meta field too large (max %d bytes)", maxMetaLength))
+	}
 
 	ping := model.Ping{
 		ID:     uuid.NewString(),
