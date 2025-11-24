@@ -54,7 +54,7 @@ func (h *Handler) Ingest(c fiber.Ctx) error {
 	}
 	bucket := fmt.Sprintf("pings-%s", ping.Ts.Format("2006-01-02"))
 	if err := h.db.SavePing(bucket, ping.ID, ping); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "failed to store ping")
 	}
 
 	h.hub.Broadcast(ping)
