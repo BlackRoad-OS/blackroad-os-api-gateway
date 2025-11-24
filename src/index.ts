@@ -23,7 +23,8 @@ export function buildServer() {
   app.register(versionRoute);
 
   app.addHook('onReady', async () => {
-    app.log.info({ services: app.serviceMap }, 'service map loaded');
+    const serviceNames = app.serviceMap ? Object.keys(app.serviceMap) : [];
+    app.log.info({ serviceNames }, 'service map loaded');
   });
 
   return app;
