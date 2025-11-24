@@ -43,9 +43,7 @@ func main() {
 		addr = ":" + envPort
 	}
 
-	time.AfterFunc(0, func() {
-		log.Printf("beacon listening on %s", addr)
-	})
+	log.Printf("beacon listening on %s", addr)
 
 	if err := app.Listen(addr); err != nil {
 		log.Fatalf("listen: %v", err)
