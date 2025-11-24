@@ -20,7 +20,7 @@ docker run -e PORT=4000 -p 4000:4000 blackroad/gateway:0.0.1
 
 ## Environment
 
-Copy `.env.example` and fill in service URLs and JWT keys. No secrets are committed.
+Copy `gateway.env.example` and fill in service URLs and JWT keys. No secrets are committed.
 
 ## Scripts
 
