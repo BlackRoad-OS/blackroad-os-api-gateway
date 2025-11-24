@@ -59,6 +59,7 @@ func (h *StreamHub) shutdown() {
 	for client := range h.clients {
 		close(client)
 	}
+	h.clients = make(map[chan model.Ping]struct{})
 }
 
 // Broadcast sends message to all subscribers.
