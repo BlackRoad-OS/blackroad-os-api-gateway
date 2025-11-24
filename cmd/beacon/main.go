@@ -39,9 +39,6 @@ func main() {
 	app.Get("/stream", h.Stream)
 
 	addr := ":" + cfg.Port
-	if envPort := os.Getenv("PORT"); envPort != "" {
-		addr = ":" + envPort
-	}
 
 	log.Printf("beacon listening on %s", addr)
 
