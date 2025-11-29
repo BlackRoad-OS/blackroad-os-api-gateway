@@ -12,7 +12,7 @@ COPY tsconfig.json .eslintrc.json .prettierrc ./
 COPY src ./src
 COPY scripts ./scripts
 
-RUN npm run compile && node ./scripts/postbuild.ts
+RUN npm run compile && npx tsx ./scripts/postbuild.ts
 
 FROM node:20-alpine
 WORKDIR /app
