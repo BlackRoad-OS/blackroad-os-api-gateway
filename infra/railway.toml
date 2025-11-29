@@ -1,0 +1,9 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+numReplicas = 1
+startCommand = "npm start"
+healthcheckPath = "/health"
+port = 4000
+restartPolicyType = "ON_FAILURE"
