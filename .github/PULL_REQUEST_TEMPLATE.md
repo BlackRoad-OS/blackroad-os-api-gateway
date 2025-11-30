@@ -1,39 +1,22 @@
-## Summary
-<!-- What does this PR do? One paragraph max. -->
+## What
+
+<!-- One line: what does this PR do? -->
+
+## Linked Issue
+
+Fixes #
+
+<!-- The "Fixes #123" syntax auto-closes the issue when merged -->
 
 ## Changes
-<!-- Bulleted list of specific changes -->
--
 
-## Type
-<!-- Check one -->
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Infrastructure / CI
-- [ ] Documentation
-- [ ] Refactor
-- [ ] Config change
+<!-- Optional: bullet list of key changes if not obvious -->
 
-## Tests
-<!-- How was this tested? -->
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Manual testing (describe below)
-- [ ] N/A (docs only)
+---
 
-**Manual testing steps:**
+<!-- 
+This PR will auto-merge when CI passes.
+No manual approval required.
 
-
-## Risk / Impact
-<!-- What could go wrong? What's the blast radius? -->
-- Risk level: Low / Medium / High
-- Affected services:
-
-## Checklist
-- [ ] Code follows project conventions
-- [ ] No secrets or credentials committed
-- [ ] README updated (if applicable)
-- [ ] This is a single logical change (atomic PR)
-
-## Related Issues
-<!-- Closes #123, Relates to #456 -->
+If CI fails, fix it or add the 'blocked' label if you need help.
+-->
