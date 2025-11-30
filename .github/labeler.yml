@@ -1,0 +1,56 @@
+# Label configuration for PR Labeler action
+
+agents:
+  - changed-files:
+      - any-glob-to-any-file: 'agents/**/*'
+
+cognition:
+  - changed-files:
+      - any-glob-to-any-file: 'cognition/**/*'
+
+capabilities:
+  - changed-files:
+      - any-glob-to-any-file: 'capabilities/**/*'
+
+guardrails:
+  - changed-files:
+      - any-glob-to-any-file: 'guardrails/**/*'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**/*'
+          - '*.md'
+          - 'README*'
+
+ci/cd:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**/*'
+          - 'Dockerfile'
+          - 'docker-compose*.yml'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+          - 'pnpm-lock.yaml'
+          - 'yarn.lock'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.config.*'
+          - '*.json'
+          - '*.yaml'
+          - '*.yml'
+          - '*.toml'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.test.*'
+          - '**/*.spec.*'
+          - '__tests__/**/*'
+          - 'test/**/*'
