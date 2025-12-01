@@ -3,10 +3,8 @@ builder = "dockerfile"
 
 [deploy]
 numReplicas = 1
-startCommand = "node dist/server.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 
 [variables]
-NODE_ENV = "production"
-PORT = "8080"
+PORT = "5000"
