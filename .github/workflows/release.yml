@@ -1,94 +1,104 @@
+# ============================================================================
+# BlackRoad OS - Release Pipeline
+# Copyright (c) 2025 BlackRoad OS, Inc. / Alexa Louise Amundson
+# All Rights Reserved.
+# ============================================================================
+#
+# Automated release workflow triggered by version tags.
+# Creates GitHub releases with changelogs and artifacts.
+#
+# Trigger: Push tags matching v*.*.* (e.g., v0.2.0, v1.0.0-beta.1)
+# ============================================================================
+
 name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Full history for changelog
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build --if-present
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
         id: changelog
-        uses: metcalfc/changelog-generator@v4.3.1
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          body: |
-            ## What's Changed
-            ${{ steps.changelog.outputs.changelog }}
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from $PREV_TAG to ${{ steps.version.outputs.tag }}"
+            CHANGES=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+          else
+            echo "First release - including all commits"
+            CHANGES=$(git log --pretty=format:"- %s (%h)" HEAD~20..HEAD)
+          fi
 
-            ## Docker Image
-            ```
-            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ```
+          # Write to file for multi-line output
+          echo "$CHANGES" > changelog.txt
+          echo "Generated changelog with $(echo "$CHANGES" | wc -l) entries"
+
+      - name: Create release archive
+        run: |
+          # Create a clean archive of the release
+          mkdir -p dist
+
+          # Archive Python files
+          tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-python.tar.gz \
+            --exclude='*.pyc' \
+            --exclude='__pycache__' \
+            --exclude='.git' \
+            *.py 2>/dev/null || echo "No Python files in root"
+
+          # Archive shell scripts
+          tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-scripts.tar.gz \
+            --exclude='.git' \
+            *.sh br-* 2>/dev/null || echo "No shell scripts in root"
+
+          # Archive config files
+          if [ -d "config" ]; then
+            tar -czvf dist/blackroad-os-${{ steps.version.outputs.version }}-config.tar.gz config/
+          fi
+
+          ls -la dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: BlackRoad OS v${{ steps.version.outputs.version }}
+          body_path: changelog.txt
           draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          files: |
+            dist/*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  docker:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-latest
-    needs: release
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          ls dist/*.tar.gz 2>/dev/null | while read f; do
+            echo "- $(basename $f)" >> $GITHUB_STEP_SUMMARY
+          done
