@@ -5,8 +5,10 @@ import authPlugin from './plugins/auth';
 import graphqlPlugin from './plugins/graphql';
 import proxyPlugin from './plugins/proxy';
 import rateLimitPlugin from './plugins/rateLimit';
+import integrationsPlugin from './plugins/integrations';
 import healthRoute from './routes/health';
 import versionRoute from './routes/version';
+import integrationsRoute from './routes/integrations';
 
 dotenv.config();
 
@@ -15,12 +17,19 @@ export function buildServer() {
     logger: true,
   });
 
+  // Core plugins
   app.register(rateLimitPlugin);
   app.register(authPlugin);
   app.register(proxyPlugin);
   app.register(graphqlPlugin);
+
+  // Integrations
+  app.register(integrationsPlugin, { autoInit: true });
+
+  // Routes
   app.register(healthRoute);
   app.register(versionRoute);
+  app.register(integrationsRoute);
 
   app.addHook('onReady', async () => {
     const serviceNames = app.serviceMap ? Object.keys(app.serviceMap) : [];
