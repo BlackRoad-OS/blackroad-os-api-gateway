@@ -1,47 +1,37 @@
-name: Deploy to Railway
+name: Deploy
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
-  build:
+  deploy-cloudflare:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
         with:
-          node-version: "20"
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile || npm install
-
-      - name: Build
-        run: pnpm build || npm run build || echo "No build step"
-
-      - name: Test
-        run: pnpm test || npm test || echo "No tests"
-
-  deploy:
-    needs: build
+  deploy-railway:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --service blackroad-os-api-gateway
+      - uses: actions/checkout@v4
+      - uses: railwayapp/cli@v3
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        with:
+          command: up
+
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, '[vercel]')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -1,0 +1,16 @@
+{
+  "service": "blackroad-os-api-gateway",
+  "org": "BlackRoad-OS",
+  "dependencies": [],
+  "provides": [
+    {
+      "name": "blackroad-os-api-gateway-api",
+      "port": 8080,
+      "protocol": "http"
+    }
+  ],
+  "discovery": {
+    "registry": "https://api.blackroad.io/registry",
+    "heartbeat": 30
+  }
+}
