@@ -29,6 +29,7 @@ export * from './ai/huggingface';
 export * from './ai/oss-models';
 
 // Networking
+export * from './network/tailscale';
 export * from './network/tunnels';
 
 // Integration Manager

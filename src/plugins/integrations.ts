@@ -39,6 +39,7 @@ import { initHuggingFace, huggingFaceHealthCheck } from '../integrations/ai/hugg
 import { initOSSModels, ossModelsHealthCheck } from '../integrations/ai/oss-models';
 
 // Network integrations
+import { initTailscale, tailscaleHealthCheck } from '../integrations/network/tailscale';
 import { initTunnels, tunnelsHealthCheck } from '../integrations/network/tunnels';
 
 declare module 'fastify' {
@@ -263,7 +264,26 @@ const integrationsPlugin: FastifyPluginAsync<IntegrationsPluginOptions> = async 
     { ...getConfig('oss-models'), enabled: true } // Always enabled as registry
   );
 
-  // Register network integrations
+  // Register Tailscale network integration
+  manager.register(
+    'tailscale',
+    (config) =>
+      initTailscale({
+        ...config,
+        tailnet: process.env.TAILSCALE_TAILNET,
+      }),
+    tailscaleHealthCheck({
+      ...getConfig('tailscale'),
+      apiKey: process.env.TAILSCALE_API_KEY,
+      tailnet: process.env.TAILSCALE_TAILNET,
+    }),
+    {
+      ...getConfig('tailscale'),
+      apiKey: process.env.TAILSCALE_API_KEY,
+    } // tailnet is passed via initFn above
+  );
+
+  // Register tunnels (Cloudflare/ngrok) network integration
   manager.register(
     'tunnels',
     (config) =>

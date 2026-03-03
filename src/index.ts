@@ -3,12 +3,16 @@ import fastify from 'fastify';
 
 import authPlugin from './plugins/auth';
 import graphqlPlugin from './plugins/graphql';
+import integrationsPlugin from './plugins/integrations';
+import oauthPlugin from './plugins/oauth';
 import proxyPlugin from './plugins/proxy';
 import rateLimitPlugin from './plugins/rateLimit';
-import integrationsPlugin from './plugins/integrations';
+import accessRoute from './routes/access';
 import healthRoute from './routes/health';
-import versionRoute from './routes/version';
 import integrationsRoute from './routes/integrations';
+import oauthRoute from './routes/oauth';
+import stripeRoute from './routes/stripe';
+import versionRoute from './routes/version';
 
 dotenv.config();
 
@@ -20,6 +24,7 @@ export function buildServer() {
   // Core plugins
   app.register(rateLimitPlugin);
   app.register(authPlugin);
+  app.register(oauthPlugin);
   app.register(proxyPlugin);
   app.register(graphqlPlugin);
 
@@ -30,6 +35,9 @@ export function buildServer() {
   app.register(healthRoute);
   app.register(versionRoute);
   app.register(integrationsRoute);
+  app.register(oauthRoute);
+  app.register(stripeRoute);
+  app.register(accessRoute);
 
   app.addHook('onReady', async () => {
     const serviceNames = app.serviceMap ? Object.keys(app.serviceMap) : [];
