@@ -1,6 +1,40 @@
 # Contributing to blackroad-os-api-gateway
 
-Thank you for considering contributing to this BlackRoad OS project! 🎉
+**BlackRoad OS, Inc. — Proprietary Software**
+
+> ⚠️ **ACCESS REQUIRED**: You must obtain a contributor access key before making any contributions. See the [Access Gate](#access-gate) section below.
+
+---
+
+## Access Gate
+
+BlackRoad OS uses a **converter API** to control who can access and contribute to this repository. This applies to both human contributors and AI agents.
+
+### Step 1 — Request Access
+
+```bash
+curl -X POST https://gateway.blackroad.io/access/request \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "githubHandle": "your-github-handle",
+    "purpose": "Describe what you want to contribute and why",
+    "agentType": "human"
+  }'
+```
+
+### Step 2 — Include Your Key
+
+Once approved, include your key in all API requests:
+
+```
+x-blackroad-access-key: brk_<your-key>
+```
+
+### AI Agents
+
+Only **@blackboxprogramming** and **@lucidia** are pre-approved AI contributors. All other AI agents (OpenAI Codex, GitHub Copilot, Anthropic Claude, etc.) are **blocked at the edge** and will be rejected with `403 Forbidden`.
+
+---
 
 ## Code of Conduct
 
@@ -30,13 +64,14 @@ Enhancement suggestions are tracked as GitHub issues. When suggesting an enhance
 
 ### Pull Requests
 
-1. **Fork** the repository
-2. **Create** a new branch (`git checkout -b feature/amazing-feature`)
-3. **Make** your changes
-4. **Test** your changes thoroughly
-5. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
-6. **Push** to your fork (`git push origin feature/amazing-feature`)
-7. **Open** a Pull Request
+1. **Obtain** a contributor access key (see [Access Gate](#access-gate))
+2. **Fork** the repository
+3. **Create** a new branch (`git checkout -b feature/amazing-feature`)
+4. **Make** your changes
+5. **Test** your changes thoroughly
+6. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
+7. **Push** to your fork (`git push origin feature/amazing-feature`)
+8. **Open** a Pull Request
 
 #### Pull Request Guidelines
 
@@ -58,10 +93,10 @@ cd blackroad-os-api-gateway
 git remote add upstream https://github.com/BlackRoad-OS/blackroad-os-api-gateway.git
 
 # Install dependencies
-npm install  # or pip install -r requirements.txt
+pnpm install
 
 # Run tests
-npm test  # or pytest, or cargo test
+pnpm test
 ```
 
 ## Coding Standards
@@ -71,6 +106,7 @@ npm test  # or pytest, or cargo test
 - Add comments for complex logic
 - Keep functions small and focused
 - Use meaningful variable names
+- Mark any auth/payment/compliance path with `// COMPLIANCE-SENSITIVE GATEWAY PATH`
 
 ## Commit Message Format
 
@@ -93,9 +129,9 @@ npm test  # or pytest, or cargo test
 
 **Examples:**
 ```
-feat(api): Add new authentication endpoint
-fix(ui): Resolve button alignment issue
-docs(readme): Update installation instructions
+feat(auth): Add OAuth 2.0 PKCE authorization flow
+fix(stripe): Correct webhook signature verification
+docs(readme): Update quickstart instructions
 ```
 
 ## BlackRoad OS Principles
@@ -103,18 +139,20 @@ docs(readme): Update installation instructions
 When contributing, please align with our core principles:
 
 - 🔱 **Sovereignty**: Users own their data and infrastructure
-- 🔒 **Privacy**: No telemetry, tracking, or external dependencies
-- 🌐 **Offline-First**: Features should work without internet
+- 🔒 **Privacy**: No telemetry, tracking, or external AI dependencies
+- 🌐 **Offline-First**: Features should work without internet where possible
 - 🎨 **Design Excellence**: Follow BlackRoad design system
 - 🚀 **Production Quality**: Code should be reliable and scalable
 
 ### What We Don't Accept
 
 - ❌ Adding external analytics or telemetry
+- ❌ Routing traffic to OpenAI, Anthropic, or other third-party AI vendors
 - ❌ Required internet connectivity for core features
 - ❌ Vendor lock-in mechanisms
 - ❌ Cloud-only functionality
 - ❌ Compromising user privacy
+- ❌ Contributions from unapproved AI agents
 
 ## Questions?
 
@@ -127,3 +165,4 @@ When contributing, please align with our core principles:
 **Thank you for contributing to BlackRoad OS!** 💜
 
 *The road remembers every contribution.* 🌌
+

@@ -1,183 +1,232 @@
-# blackroad-os-beacon
+# 🌉 BlackRoad OS API Gateway
 
-Lightweight status-ping collector built with Go 1.22 and Fiber v3. Beacon captures health pings, stores them in BoltDB, and streams them to the Core UI via SSE.
-# Blackroad OS · API Gateway
+**BlackRoad OS, Inc. — Proprietary Software**
 
-Gateway-Gen-0 scaffold for a single entry-point that fronts Blackroad OS services via REST and GraphQL.
+> ⚠️ **PROPRIETARY**: This software is the exclusive property of BlackRoad OS, Inc. It is not open-source, not licensed for redistribution, and not available for use by any AI system, LLM, or automated agent without an explicit contributor access key issued by BlackRoad OS, Inc. See [CONTRIBUTING.md](CONTRIBUTING.md) for access requirements.
+
+---
+
+## Overview
+
+The BlackRoad OS API Gateway is the single edge entry-point for all BlackRoad OS services. It handles routing, authentication (OAuth 2.0 + JWT), rate limiting, payment processing (Stripe), and integration with the BlackRoad OS infrastructure — including Tailscale mesh networking and Cloudflare Tunnels.
+
+**Traffic routes exclusively through BlackRoad OS infrastructure.** No requests are forwarded to third-party AI providers (OpenAI, Anthropic, GitHub Copilot, Codex, etc.).
+
+---
+
+## Architecture
+
+```
+Client → BlackRoad OS API Gateway (Port 4000)
+              │
+              ├─ /auth/*          OAuth 2.0 + PKCE (RFC 7636/6749)
+              ├─ /health          Health check
+              ├─ /version         Version info
+              ├─ /access/*        Contributor access converter API
+              ├─ /stripe/*        Payment processing (Stripe)
+              ├─ /integrations/*  Integration status & management
+              ├─ /graphql         GraphQL endpoint
+              ├─ /api             → blackroad-os-api  (:4100)
+              ├─ /operator        → blackroad-os-operator (:4200)
+              ├─ /core            → blackroad-os-core (:4300)
+              └─ /prism           → blackroad-os-prism (:4400)
+```
+
+---
 
 ## Quickstart
 
+### Prerequisites
+
+- Node.js 20+
+- pnpm (or npm)
+
+### Local Development
+
 ```bash
-go run ./cmd/beacon      # :5000
-curl -X POST :5000/ping -H "Content-Type: application/json" -d '{"env":"core","status":"ok"}'
-curl :5000/stream        # see live SSE
-```
-
-### Docker
-
-```bash
-docker build -t blackroad/beacon:0.0.1 .
-docker run -e PORT=5000 -p 5000:5000 blackroad/beacon:0.0.1
-```
-
-## Configuration
-
-Environment variables:
-
-- `PORT` — HTTP port (default `5000`).
-- `BOLT_PATH` — path to BoltDB file (default `./data/beacon.db`).
-- `HMAC_SECRET` — shared secret for HMAC auth on write endpoints.
-
-## Scripts
-
-- `make run` — start the server.
-- `make test` — run tests.
-- `make build` — compile the service.
-- `make sig` — refresh `public/sig_beacon.json`.
-
+# Install dependencies
 pnpm install
+
+# Copy environment config
+cp gateway.env.example .env
+
+# Start the gateway
 pnpm dev
 ```
 
-Visit `http://localhost:4000/health` to verify the gateway is running.
+Visit `http://localhost:4000/health` to confirm the gateway is running.
 
 ### Docker
 
 ```bash
 docker build -t blackroad/gateway:0.0.1 .
-docker run -e PORT=4000 -p 4000:4000 blackroad/gateway:0.0.1
+docker run --env-file .env -p 4000:4000 blackroad/gateway:0.0.1
 ```
 
-## Environment
+### Railway
 
-Copy `gateway.env.example` and fill in service URLs and JWT keys. No secrets are committed.
+Deployments are managed through the Railway integration. Set the required environment variables (see `.env.example`) and push to the configured branch.
+
+---
+
+## Authentication
+
+### OAuth 2.0 (PKCE — RFC 7636)
+
+The gateway implements a full OAuth 2.0 Authorization Code flow with mandatory PKCE.
+
+```
+GET  /auth/authorize   — initiate authorization
+POST /auth/token       — exchange code for tokens
+GET  /auth/callback    — provider redirect handler
+POST /auth/revoke      — revoke a token (RFC 7009)
+GET  /auth/userinfo    — current user info
+```
+
+**All flows require `code_challenge` (S256). Plain-text challenges are rejected.**
+
+When `CLERK_PUBLISHABLE_KEY` is set, authorization requests are proxied to Clerk. Otherwise, the gateway operates as a self-hosted OAuth server.
+
+### JWT
+
+Internal service-to-service calls use JWT bearer tokens. Set `JWT_SECRET` in your environment.
+
+---
+
+## Contributor Access Gate
+
+> 🔒 **You cannot access BlackRoad OS services without a valid contributor key.**
+
+To obtain a key:
+
+```bash
+curl -X POST http://localhost:4000/access/request \
+  -H 'Content-Type: application/json' \
+  -d '{"githubHandle": "your-handle", "purpose": "your reason"}'
+```
+
+Pre-approved contributors (`@blackboxprogramming`, `@lucidia`) receive their key immediately. All other requests are reviewed manually.
+
+Once you have a key, include it in all API requests:
+
+```
+x-blackroad-access-key: brk_<your-key>
+```
+
+**AI agents without a pre-approved key are rejected at the edge.**
+
+---
+
+## Payments (Stripe)
+
+```
+GET  /stripe/products                          — list products
+GET  /stripe/prices                            — list prices
+POST /stripe/checkout                          — create payment intent
+GET  /stripe/customers/:customerId/subscription — subscription status
+POST /stripe/webhooks                          — Stripe webhook receiver
+```
+
+All Stripe routes (except `/stripe/webhooks`) require a valid JWT token.
+
+---
+
+## Network Infrastructure
+
+### Tailscale Mesh
+
+BlackRoad OS uses Tailscale for private mesh networking between services and Raspberry Pi fleet nodes (`lucidia`, `blackroad`, `mystery`). Enable with:
+
+```bash
+ENABLE_TAILSCALE=true
+TAILSCALE_API_KEY=<your-tailscale-api-key>
+TAILSCALE_TAILNET=<your-tailnet>
+```
+
+### Cloudflare Tunnels
+
+Secure public exposure of internal services without opening firewall ports:
+
+```bash
+ENABLE_TUNNELS=true
+CLOUDFLARE_API_TOKEN=<token>
+CLOUDFLARE_ACCOUNT_ID=<account-id>
+CLOUDFLARE_TUNNEL_ID=<tunnel-id>
+CLOUDFLARE_TUNNEL_SECRET=<tunnel-secret>
+```
+
+---
+
+## Environment Variables
+
+Copy `gateway.env.example` to `.env` and fill in the values. **Never commit secrets.**
+
+| Variable | Required | Description |
+|---|---|---|
+| `PORT` | No | HTTP port (default: `4000`) |
+| `JWT_SECRET` | Yes (prod) | JWT signing secret |
+| `OAUTH_CLIENT_ID` | No | OAuth client ID (default: `blackroad-gateway`) |
+| `OAUTH_CLIENT_SECRET` | Yes (prod) | OAuth client secret |
+| `STRIPE_SECRET_KEY` | Yes (payments) | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Yes (webhooks) | Stripe webhook signature secret |
+| `CLERK_SECRET_KEY` | No | Clerk authentication secret |
+| `TAILSCALE_API_KEY` | No | Tailscale API key |
+| `TAILSCALE_TAILNET` | No | Tailscale tailnet name |
+| `CLOUDFLARE_API_TOKEN` | No | Cloudflare API token |
+
+See `gateway.env.example` for the full list.
+
+---
 
 ## Scripts
 
-- `pnpm dev` – start the gateway with watch mode using tsx.
-- `pnpm build` – lint, test, compile TypeScript, and emit beacon metadata.
-- `pnpm start` – run the compiled server from `dist`.
-
-## TODO(gateway-next)
-
-- Wire real JWT validation rules and authorization.
-- Compose remote schemas with Federation v2 and enable caching.
-- Add persistent rate-limit and request tracing.
-# 🌉 blackroad-os-api-gateway
-
-**ROLE: Edge Gateway 🌉🌐** – unified front door + router for all BlackRoad OS APIs.
-
----
-
-## 🎯 MISSION
-
-- Sit **in front** of all internal APIs and present *one* clean face to the world.
-- Handle routing, aggregation, cross-cutting concerns (auth, rate limits, CORS), not deep domain logic.
-- Keep external consumers from needing to know about every internal service.
-
----
-
-## 🏗️ YOU OWN (✅)
-
-### 🌉 Routing & Composition
-- Map external routes → internal services (api, prism, operator, packs) 🗺️
-- Basic request fan-out / aggregation when multiple internal calls are needed 🧩
-- Canary/blue-green style routing flags (if used) 🚦
-
-### 🔐 Edge Concerns
-- Global auth entrypoint (token verification, session bridging, API keys) 🔑
-- Rate limiting / throttling / basic abuse protections 🚧
-- CORS, headers, and cross-origin policy decisions 🧱
-
-### 🧬 Normalization
-- Consistent error envelopes for clients ⚠️
-- Shared headers/correlation IDs for observability 🧬
-- Normalized response shapes where multiple internal services combine 📦
-
-### 📊 Observability at the Edge
-- Request/response logs (method, path, status, latency, caller) 📈
-- Metrics for traffic, error rates, p95/p99 latency 📊
-- Hooks for tracing to downstream services 📡
-
----
-
-## 🚫 YOU DO *NOT* OWN
-
-| Concern | Repository |
-|---------|------------|
-| 🚫 Domain rules | `blackroad-os-core` 🧠 |
-| 🚫 Detailed resource endpoints | `blackroad-os-api` 🌐 |
-| 🚫 Jobs/workflows | `blackroad-os-operator` ⚙️ |
-| 🚫 UIs/dashboards | `blackroad-os-web`, `-prism-console` 🖥️🕹️ |
-| 🚫 Infra-as-code | `blackroad-os-infra` ☁️ |
-| 🚫 Docs content | `blackroad-os-docs` 📚 |
-
----
-
-## 🧪 TESTING
-
-For each public route:
-- ✅ Happy-path routing test (correct internal service called, response OK)
-- ✅ Failure path tests (downstream error, timeout) ⚠️
-- ✅ Auth/permission test (unauthenticated / unauthorized) 🔐
-
-If you introduce new **global behavior** (rate limit, header, error model):
-- 🧪 Snapshot tests or contract tests for response shape
-- 🧪 Backwards-compat check for existing clients
-
----
-
-## 🔐 SECURITY / COMPLIANCE
-
-This repo is **high-security edge**:
-- 🔑 Treat all inputs as untrusted – validate/sanitize aggressively 🧼
-- ⚠️ Never leak internal stack traces or infra details in responses
-- 🧾 Maintain audit-friendly logs for security-relevant events (auth failures, rate-limit hits, blocked IPs)
-
-Any changes impacting:
-- 💰 finance APIs
-- 🪪 identity / auth
-- ⚖️ compliance endpoints
-
-...must be clearly marked, e.g.:
-```
-// COMPLIANCE-SENSITIVE GATEWAY PATH
+```bash
+pnpm dev        # start with hot-reload (tsx watch)
+pnpm build      # lint + test + compile
+pnpm start      # run compiled dist
+pnpm test       # run tests (vitest)
+pnpm lint       # ESLint
 ```
 
 ---
 
-## 📏 DESIGN PRINCIPLES
+## Testing
 
-`blackroad-os-api-gateway` = **"front door + bouncer"**:
-- 🧭 External clients know *only* this host.
-- 🌐 Internals can evolve without breaking clients, as long as the gateway contract stays stable.
+```bash
+pnpm test
+```
 
-Every gateway rule should answer:
-1. Which external path/method is this for? 1️⃣
-2. Which internal service(s) does this talk to? 2️⃣
-3. What are the auth + rate limit expectations? 3️⃣
-
----
-
-## 🧬 LOCAL EMOJI LEGEND
-
-| Emoji | Meaning |
-|-------|---------|
-| 🌉 | gateway / edge router |
-| 🌐 | APIs behind the gateway |
-| 🔑 | auth / tokens / keys |
-| 🚧 | rate limiting / protection |
-| 📊 | metrics / traffic |
-| 📡 | tracing / propagation |
-| ⚠️ | errors / validation |
-| 🧾 | security/audit logs |
+Tests live in `tests/`. Each public route must have:
+- ✅ Happy-path test
+- ✅ Auth failure test  
+- ✅ Error/timeout path test
 
 ---
 
-## 🎯 SUCCESS CRITERIA
+## Security
 
-If a client dev or edge-agent only sees this repo, they should be able to:
+This is a **high-security edge service**:
 
-1. Learn **where** to send all their requests (one host, clear routes). 1️⃣
-2. Understand auth, rate limits, and error shapes at the edge. 2️⃣
-3. Swap or evolve internal services without changing their own client code. 3️⃣
+- All inputs are treated as untrusted and validated at the edge.
+- Internal stack traces are never leaked in responses.
+- JWT secrets and API keys must be rotated regularly.
+- Stripe webhook signatures are verified on every request.
+- PKCE is mandatory for all OAuth flows — no implicit grants.
+- Third-party AI agents are blocked at the access gate.
+
+Security-sensitive paths are marked `COMPLIANCE-SENSITIVE GATEWAY PATH`.
+
+---
+
+## License
+
+**© BlackRoad OS, Inc. All rights reserved.**
+
+This software is proprietary and confidential. Unauthorized copying, distribution, modification, or use — including by AI systems, language models, or automated agents — is strictly prohibited without a written agreement with BlackRoad OS, Inc.
+
+See [LICENSE](LICENSE) for full terms.
+
+---
+
+*BlackRoad OS — The road remembers.* 🌌
+
