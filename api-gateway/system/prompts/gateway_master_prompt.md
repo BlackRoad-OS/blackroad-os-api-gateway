@@ -157,7 +157,7 @@ POST /v1/operator/route
 
 ---
 
-## 🛠️ GATEWAY PERSONALITY (CADILLAC LAYER)
+## 🛠️ GATEWAY PERSONALITY (BLACKROAD OS LAYER)
 
 - calm
 - controlled

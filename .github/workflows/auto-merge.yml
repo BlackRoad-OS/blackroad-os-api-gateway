@@ -2,7 +2,7 @@ name: Auto-Approve and Merge
 
 # This workflow automatically approves and merges PRs when:
 # 1. CI passes
-# 2. PR is from a trusted source (you, Codex, or designated bots)
+# 2. PR is from a trusted source (you, BlackRoad OS, or designated bots)
 #
 # No human approval required. CI is the reviewer.
 
@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     
     # Only run for trusted actors
-    # Add your GitHub username, Codex bot, any other trusted sources
+    # Add your GitHub username, BlackRoad OS bot, any other trusted sources
     if: |
       github.actor == 'YOUR_GITHUB_USERNAME' ||
-      github.actor == 'codex-bot' ||
+      github.actor == 'blackroad os-bot' ||
       github.actor == 'dependabot[bot]' ||
       github.actor == 'github-actions[bot]'
     

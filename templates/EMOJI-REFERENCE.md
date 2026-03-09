@@ -395,7 +395,7 @@ Example:
 ## 🎯 Next Steps
 
 1. **Use in Templates**: All templates now use this emoji system
-2. **Train AI**: Claude/ChatGPT can learn these patterns
+2. **Train AI**: Claude/BlackRoad OS can learn these patterns
 3. **Consistency**: All docs follow same emoji language
 4. **Evolution**: Propose new emojis via PR with justification
 

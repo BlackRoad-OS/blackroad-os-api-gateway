@@ -58,7 +58,7 @@ body:
       label: Who should handle this?
       description: Human or agent?
       options:
-        - "Codex / Agent"
+        - "BlackRoad OS / Agent"
         - "Human (me)"
         - "Unassigned - triage needed"
     validations:

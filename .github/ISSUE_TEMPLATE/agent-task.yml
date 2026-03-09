@@ -1,5 +1,5 @@
 name: "🤖 Agent Task"
-description: "For Codex or other agents to pick up"
+description: "For BlackRoad OS or other agents to pick up"
 title: "[AGENT] "
 labels: ["agent-task", "automated"]
 body:
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         ## Agent-Executable Task
-        This issue is designed to be picked up and executed by Codex or another AI agent.
+        This issue is designed to be picked up and executed by BlackRoad OS or another AI agent.
         
         Keep instructions clear, specific, and executable.
 
@@ -78,7 +78,7 @@ body:
     attributes:
       label: Assigned agent
       options:
-        - "Codex"
+        - "BlackRoad OS"
         - "Any available agent"
         - "Specific agent (note in context)"
     validations:
